@@ -2,6 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import time
+import os
+
 
 dataPath = "D:/Projects/FrenchCollector/data/"
 
@@ -70,12 +72,9 @@ def hitSoup(frenchVerb):
 
 
 
-def verbParser(frenchVerb):
 
+def verbParser(conjugations):
 	verbDict = {}
-	
-	conjugations = hitSoup(frenchVerb)
-
 	for tense in conjugations:
 
 		try:
@@ -86,7 +85,6 @@ def verbParser(frenchVerb):
 		if tense_id is not None:
 			
 			tense_text = tense.text.lower()
-
 
 			if tense_id == "temps0":
 				tense_text = tense_text.replace("present", "")
@@ -124,14 +122,29 @@ def verbParser(frenchVerb):
 				verbDict["conditionnel passe"] = processed_tense
 
 	df = pd.DataFrame(verbDict)
-	df.to_excel(dataPath +  frenchVerb + '.xlsx', index=False)
+	return df
+
+
+
+def verbDownloader(frenchVerb):
+	conjugations = hitSoup(frenchVerb)
+
+	try:
+		df = verbParser(conjugations)
+		df.to_excel(dataPath +  frenchVerb + '.xlsx', index=False)
+	except:
+		print('Could not finish ', frenchVerb)
 
 
 if __name__ == "__main__":
+	downloaded = os.listdir(dataPath)
+	downloaded = [x.replace('.xlsx', '') for x in downloaded]
+
 	frame = pd.read_excel('verbsList.xlsx')
 	frame.dropna(subset=['french'], axis=0, inplace=True)
 	DFverbs = list(frame['french'].unique())
 	for dfVerb in DFverbs:
-		print(dfVerb)
-		verbParser(dfVerb)
-		time.sleep(20)
+		if dfVerb not in downloaded:
+			print(dfVerb)
+			verbDownloader(dfVerb)
+			time.sleep(10)
